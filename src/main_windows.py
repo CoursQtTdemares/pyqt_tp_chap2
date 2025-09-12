@@ -14,6 +14,8 @@ class MainWindow(QMainWindow):
         self.setup_menu_bar()
         self.setup_toolbar()
         self.setup_status_bar()
+        self.action_sauvegarder_menu.setEnabled(False)
+        self.action_sauvegarder_toolbar.setEnabled(False)
 
     def setup_menu_bar(self) -> None:
         if (menu_bar := self.menuBar()) is None:
@@ -29,10 +31,10 @@ class MainWindow(QMainWindow):
         action_ouvrir.triggered.connect(self.action_ouvrir)
         menu_bar.addAction(action_ouvrir)
 
-        action_sauvegarder = QAction("&Sauvegarder", self)
-        action_sauvegarder.setShortcut("Ctrl+S")
-        action_sauvegarder.triggered.connect(self.action_sauvegarder)
-        menu_bar.addAction(action_sauvegarder)
+        self.action_sauvegarder_menu = QAction("&Sauvegarder", self)
+        self.action_sauvegarder_menu.setShortcut("Ctrl+S")
+        self.action_sauvegarder_menu.triggered.connect(self.action_sauvegarder)
+        menu_bar.addAction(self.action_sauvegarder_menu)
 
         action_quitter = QAction("&Quitter", self)
         action_quitter.setShortcut("Ctrl+Q")
@@ -40,19 +42,24 @@ class MainWindow(QMainWindow):
         menu_bar.addAction(action_quitter)
 
     def action_nouveau(self) -> None:
-        # Barre de statut
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Nouvelle fenêtre ouverte", 1000)
+        self.action_sauvegarder_menu.setEnabled(True)
+        self.action_sauvegarder_toolbar.setEnabled(True)
 
     def action_ouvrir(self) -> None:
-        # Barre de statut
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Fenêtre ouverte", 1000)
+        self.action_sauvegarder_menu.setEnabled(True)
+        self.action_sauvegarder_toolbar.setEnabled(True)
 
     def action_sauvegarder(self) -> None:
         # Barre de statut
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Fenêtre sauvegardée", 1000)
+
+        self.action_sauvegarder_menu.setEnabled(False)
+        self.action_sauvegarder_toolbar.setEnabled(False)
 
     def setup_toolbar(self) -> None:
         if (toolbar := self.addToolBar("Principal")) is None:
@@ -74,10 +81,10 @@ class MainWindow(QMainWindow):
 
         toolbar.addSeparator()
 
-        action_sauvegarder = QAction("&Sauvegarder", self)
-        action_sauvegarder.setIcon(QIcon("icons/save.png"))
-        action_sauvegarder.triggered.connect(self.action_sauvegarder)
-        toolbar.addAction(action_sauvegarder)
+        self.action_sauvegarder_toolbar = QAction("&Sauvegarder", self)
+        self.action_sauvegarder_toolbar.setIcon(QIcon("icons/save.png"))
+        self.action_sauvegarder_toolbar.triggered.connect(self.action_sauvegarder)
+        toolbar.addAction(self.action_sauvegarder_toolbar)
 
     def setup_status_bar(self) -> None:
         if (status_bar := self.statusBar()) is None:
