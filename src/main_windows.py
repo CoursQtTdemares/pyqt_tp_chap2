@@ -23,21 +23,25 @@ class MainWindow(QMainWindow):
 
         action_nouveau = QAction("&Nouveau", self)
         action_nouveau.setShortcut("Ctrl+N")
+        action_nouveau.setStatusTip("Créer un nouveau document")
         action_nouveau.triggered.connect(self.action_nouveau)
         menu_bar.addAction(action_nouveau)
 
         action_ouvrir = QAction("&Ouvrir", self)
         action_ouvrir.setShortcut("Ctrl+O")
+        action_ouvrir.setStatusTip("Ouvrir un document existant")
         action_ouvrir.triggered.connect(self.action_ouvrir)
         menu_bar.addAction(action_ouvrir)
 
         self.action_sauvegarder_menu = QAction("&Sauvegarder", self)
         self.action_sauvegarder_menu.setShortcut("Ctrl+S")
+        self.action_sauvegarder_menu.setStatusTip("Sauvegarder le document actuel")
         self.action_sauvegarder_menu.triggered.connect(self.action_sauvegarder)
         menu_bar.addAction(self.action_sauvegarder_menu)
 
         action_quitter = QAction("&Quitter", self)
         action_quitter.setShortcut("Ctrl+Q")
+        action_quitter.setStatusTip("Fermer l'application")
         action_quitter.triggered.connect(self.close)
         menu_bar.addAction(action_quitter)
 
@@ -69,6 +73,7 @@ class MainWindow(QMainWindow):
 
         action_nouveau = QAction("&Nouveau", self)
         action_nouveau.setIcon(QIcon("icons/new.png"))
+        action_nouveau.setStatusTip("Créer un nouveau document")
         action_nouveau.triggered.connect(self.action_nouveau)
         toolbar.addAction(action_nouveau)
 
@@ -76,6 +81,7 @@ class MainWindow(QMainWindow):
 
         action_ouvrir = QAction("&Ouvrir", self)
         action_ouvrir.setIcon(QIcon("icons/open.png"))
+        action_ouvrir.setStatusTip("Ouvrir un document existant")
         action_ouvrir.triggered.connect(self.action_ouvrir)
         toolbar.addAction(action_ouvrir)
 
@@ -83,6 +89,7 @@ class MainWindow(QMainWindow):
 
         self.action_sauvegarder_toolbar = QAction("&Sauvegarder", self)
         self.action_sauvegarder_toolbar.setIcon(QIcon("icons/save.png"))
+        self.action_sauvegarder_toolbar.setStatusTip("Sauvegarder le document actuel")
         self.action_sauvegarder_toolbar.triggered.connect(self.action_sauvegarder)
         toolbar.addAction(self.action_sauvegarder_toolbar)
 
