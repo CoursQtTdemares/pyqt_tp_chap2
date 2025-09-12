@@ -13,10 +13,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(label)
         self.setup_menu_bar()
         self.setup_toolbar()
-
-        # Barre de statut
-        if (status_bar := self.statusBar()) is not None:
-            status_bar.showMessage("Application prête")
+        self.setup_status_bar()
 
     def setup_menu_bar(self) -> None:
         if (menu_bar := self.menuBar()) is None:
@@ -39,7 +36,7 @@ class MainWindow(QMainWindow):
 
         action_quitter = QAction("&Quitter", self)
         action_quitter.setShortcut("Ctrl+Q")
-        action_quitter.triggered.connect(self.action_quitter)
+        action_quitter.triggered.connect(self.close)
         menu_bar.addAction(action_quitter)
 
     def action_nouveau(self) -> None:
@@ -56,11 +53,6 @@ class MainWindow(QMainWindow):
         # Barre de statut
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Fenêtre sauvegardée", 1000)
-
-    def action_quitter(self) -> None:
-        # Barre de statut
-        if (status_bar := self.statusBar()) is not None:
-            status_bar.showMessage("Application quittée", 1000)
 
     def setup_toolbar(self) -> None:
         if (toolbar := self.addToolBar("Principal")) is None:
@@ -87,9 +79,11 @@ class MainWindow(QMainWindow):
         action_sauvegarder.triggered.connect(self.action_sauvegarder)
         toolbar.addAction(action_sauvegarder)
 
-        toolbar.addSeparator()
+    def setup_status_bar(self) -> None:
+        if (status_bar := self.statusBar()) is None:
+            return
 
-        action_quitter = QAction("&Quitter", self)
-        action_quitter.setIcon(QIcon("icons/open.png"))
-        action_quitter.triggered.connect(self.action_quitter)
-        toolbar.addAction(action_quitter)
+        status_bar.showMessage("Application prête", 2000)
+
+        self.status_label_permanent = QLabel("État: Prêt")
+        status_bar.addPermanentWidget(self.status_label_permanent)
