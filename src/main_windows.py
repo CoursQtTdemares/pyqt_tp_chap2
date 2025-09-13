@@ -19,6 +19,8 @@ class MainWindow(QMainWindow):
         self.setup_status_bar()
         self.action_sauvegarder_menu.setEnabled(False)
         self.action_sauvegarder_toolbar.setEnabled(False)
+        self.content_to_copy = False
+        self.content_to_cut = False
         self.setup_theme()
         self.setup_context_menu()
 
@@ -150,6 +152,7 @@ class MainWindow(QMainWindow):
             return
 
         paste_action.triggered.connect(self.paste_content)
+        paste_action.setEnabled(self.has_clipboard_content())
 
         context_menu.addSeparator()
 
@@ -163,15 +166,29 @@ class MainWindow(QMainWindow):
 
     def copy_content(self) -> None:
         """Gestionnaire copier"""
+        self.content_to_copy = True
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Contenu copié", 2000)
 
     def paste_content(self) -> None:
         """Gestionnaire coller"""
+        if self.content_to_cut is True:
+            self.content_to_cut = False
+
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Contenu collé", 2000)
 
     def cut_content(self) -> None:
         """Affiche les propriétés"""
+        self.content_to_cut = True
+        self.content_to_copy = False
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Contenu coupé", 2000)
+
+    def has_text_selected(self) -> bool:
+        """Vérifie si du texte est sélectionné"""
+        return True
+
+    def has_clipboard_content(self) -> bool:
+        """Vérifie si le presse-papier contient du contenu"""
+        return self.content_to_copy or self.content_to_cut
