@@ -2,6 +2,9 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QLabel, QMainWindow
 
+from src.domain.constants import CSS_FILE_PATH
+from src.utils import load_css
+
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -16,6 +19,7 @@ class MainWindow(QMainWindow):
         self.setup_status_bar()
         self.action_sauvegarder_menu.setEnabled(False)
         self.action_sauvegarder_toolbar.setEnabled(False)
+        self.setStyleSheet(load_css(CSS_FILE_PATH))
 
     def setup_menu_bar(self) -> None:
         if (menu_bar := self.menuBar()) is None:
