@@ -1,6 +1,6 @@
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QAction, QIcon
-from PyQt6.QtWidgets import QLabel, QMainWindow
+from PyQt6.QtWidgets import QLabel, QMainWindow, QMenu
 
 from src.domain.constants import CSS_DARK_FILE_PATH, CSS_LIGHT_FILE_PATH
 from src.utils import load_css
@@ -20,6 +20,7 @@ class MainWindow(QMainWindow):
         self.action_sauvegarder_menu.setEnabled(False)
         self.action_sauvegarder_toolbar.setEnabled(False)
         self.setup_theme()
+        self.setup_context_menu()
 
     def setup_theme(self) -> None:
         self.apply_light_theme()  # default theme
@@ -128,3 +129,49 @@ class MainWindow(QMainWindow):
 
         self.status_label_permanent = QLabel("État: Prêt")
         status_bar.addPermanentWidget(self.status_label_permanent)
+
+    def setup_context_menu(self) -> None:
+        """Configure les menus contextuels"""
+        # Activer les menus contextuels
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
+
+    def show_context_menu(self, position: QPoint) -> None:
+        """Affiche le menu contextuel"""
+        context_menu = QMenu(self)
+
+        # Actions du menu contextuel
+        if (copy_action := context_menu.addAction("Copier")) is None:
+            return
+
+        copy_action.triggered.connect(self.copy_content)
+
+        if (paste_action := context_menu.addAction("Coller")) is None:
+            return
+
+        paste_action.triggered.connect(self.paste_content)
+
+        context_menu.addSeparator()
+
+        if (properties_action := context_menu.addAction("Propriétés...")) is None:
+            return
+
+        properties_action.triggered.connect(self.show_properties)
+
+        # Afficher le menu à la position du clic
+        context_menu.exec(self.mapToGlobal(position))
+
+    def copy_content(self) -> None:
+        """Gestionnaire copier"""
+        if (status_bar := self.statusBar()) is not None:
+            status_bar.showMessage("Contenu copié", 2000)
+
+    def paste_content(self) -> None:
+        """Gestionnaire coller"""
+        if (status_bar := self.statusBar()) is not None:
+            status_bar.showMessage("Contenu collé", 2000)
+
+    def show_properties(self) -> None:
+        """Affiche les propriétés"""
+        if (status_bar := self.statusBar()) is not None:
+            status_bar.showMessage("Affichage des propriétés...", 2000)
