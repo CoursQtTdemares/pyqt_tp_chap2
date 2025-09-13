@@ -2,7 +2,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QLabel, QMainWindow
 
-from src.domain.constants import CSS_FILE_PATH
+from src.domain.constants import CSS_DARK_FILE_PATH, CSS_LIGHT_FILE_PATH
 from src.utils import load_css
 
 
@@ -19,7 +19,30 @@ class MainWindow(QMainWindow):
         self.setup_status_bar()
         self.action_sauvegarder_menu.setEnabled(False)
         self.action_sauvegarder_toolbar.setEnabled(False)
-        self.setStyleSheet(load_css(CSS_FILE_PATH))
+        self.setup_theme()
+
+    def setup_theme(self) -> None:
+        self.apply_light_theme()  # default theme
+
+        if (menu := self.menuBar()) is None:
+            return
+
+        if (theme_menu := menu.addMenu("&Thème")) is None:
+            return
+
+        light_theme = QAction("&Thème clair", self)
+        light_theme.triggered.connect(self.apply_light_theme)
+        theme_menu.addAction(light_theme)
+
+        dark_theme = QAction("&Thème sombre", self)
+        dark_theme.triggered.connect(self.apply_dark_theme)
+        theme_menu.addAction(dark_theme)
+
+    def apply_light_theme(self) -> None:
+        self.setStyleSheet(load_css(CSS_LIGHT_FILE_PATH))
+
+    def apply_dark_theme(self) -> None:
+        self.setStyleSheet(load_css(CSS_DARK_FILE_PATH))
 
     def setup_menu_bar(self) -> None:
         if (menu_bar := self.menuBar()) is None:
