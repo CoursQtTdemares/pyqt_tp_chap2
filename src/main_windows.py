@@ -28,6 +28,7 @@ class MainWindow(QMainWindow):
         self.content_to_cut = False
         self.setup_theme()
         self.setup_context_menu()
+        self.setup_shortcuts()
 
     def setup_theme(self) -> None:
         self.apply_light_theme()  # default theme
@@ -144,6 +145,26 @@ class MainWindow(QMainWindow):
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
 
+    def setup_shortcuts(self) -> None:
+        """Configure les raccourcis clavier globaux"""
+        # Raccourci Copier (Ctrl+C)
+        shortcut_copy = QAction(self)
+        shortcut_copy.setShortcut("Ctrl+C")
+        shortcut_copy.triggered.connect(self.copy_content)
+        self.addAction(shortcut_copy)
+
+        # Raccourci Couper (Ctrl+X)
+        shortcut_cut = QAction(self)
+        shortcut_cut.setShortcut("Ctrl+X")
+        shortcut_cut.triggered.connect(self.cut_content)
+        self.addAction(shortcut_cut)
+
+        # Raccourci Coller (Ctrl+V)
+        shortcut_paste = QAction(self)
+        shortcut_paste.setShortcut("Ctrl+V")
+        shortcut_paste.triggered.connect(self.paste_content)
+        self.addAction(shortcut_paste)
+
     def show_context_menu(self, position: QPoint) -> None:
         """Affiche le menu contextuel"""
         widget_clicked = self.childAt(position)
@@ -212,8 +233,10 @@ class MainWindow(QMainWindow):
         if self.content_to_cut is True:
             self.content_to_cut = False
 
+        message = "Aucun contenu à coller" if self.has_clipboard_content() is False else "Contenu collé"
+
         if (status_bar := self.statusBar()) is not None:
-            status_bar.showMessage("Contenu collé", 2000)
+            status_bar.showMessage(message, 2000)
 
     def cut_content(self) -> None:
         """Affiche les propriétés"""
