@@ -14,6 +14,11 @@ class MainWindow(QMainWindow):
 
         label = QLabel("Hello, World!")
         self.setCentralWidget(label)
+
+        # Initialiser les états de formatage
+        self.is_bold = False
+        self.is_italic = False
+
         self.setup_menu_bar()
         self.setup_toolbar()
         self.setup_status_bar()
@@ -161,6 +166,26 @@ class MainWindow(QMainWindow):
 
         properties_action.triggered.connect(self.cut_content)
 
+        # Sous-menu Format avec actions checkable
+        if (format_menu := context_menu.addMenu("Format")) is None:
+            return
+
+        # Action Gras - checkable
+        action_gras = QAction("Gras", self)
+        action_gras.setCheckable(True)
+        action_gras.setChecked(self.is_bold)
+        action_gras.triggered.connect(self.toggle_bold)
+        format_menu.addAction(action_gras)
+
+        # Action Italique - checkable
+        action_italique = QAction("Italique", self)
+        action_italique.setCheckable(True)
+        action_italique.setChecked(self.is_italic)
+        action_italique.triggered.connect(self.toggle_italic)
+        format_menu.addAction(action_italique)
+
+        format_menu.addAction("Couleur du texte")
+
         # Afficher le menu à la position du clic
         context_menu.exec(self.mapToGlobal(position))
 
@@ -192,3 +217,23 @@ class MainWindow(QMainWindow):
     def has_clipboard_content(self) -> bool:
         """Vérifie si le presse-papier contient du contenu"""
         return self.content_to_copy or self.content_to_cut
+
+    def toggle_bold(self) -> None:
+        """Bascule l'état gras du texte"""
+        self.is_bold = not self.is_bold
+
+        if (status_bar := self.statusBar()) is not None:
+            if self.is_bold:
+                status_bar.showMessage("Formatage gras activé", 2000)
+            else:
+                status_bar.showMessage("Formatage gras désactivé", 2000)
+
+    def toggle_italic(self) -> None:
+        """Bascule l'état italique du texte"""
+        self.is_italic = not self.is_italic
+
+        if (status_bar := self.statusBar()) is not None:
+            if self.is_italic:
+                status_bar.showMessage("Formatage italique activé", 2000)
+            else:
+                status_bar.showMessage("Formatage italique désactivé", 2000)
