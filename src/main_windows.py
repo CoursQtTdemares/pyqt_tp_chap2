@@ -101,32 +101,33 @@ class MainWindow(QMainWindow):
         self.action_sauvegarder_toolbar.setEnabled(False)
 
     def setup_toolbar(self) -> None:
-        if (toolbar := self.addToolBar("Principal")) is None:
+        self.toolbar = self.addToolBar("Principal")
+        if self.toolbar is None:
             return
 
-        toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        self.toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
 
         action_nouveau = QAction("&Nouveau", self)
         action_nouveau.setIcon(QIcon("icons/new.png"))
         action_nouveau.setStatusTip("Créer un nouveau document")
         action_nouveau.triggered.connect(self.action_nouveau)
-        toolbar.addAction(action_nouveau)
+        self.toolbar.addAction(action_nouveau)
 
-        toolbar.addSeparator()
+        self.toolbar.addSeparator()
 
         action_ouvrir = QAction("&Ouvrir", self)
         action_ouvrir.setIcon(QIcon("icons/open.png"))
         action_ouvrir.setStatusTip("Ouvrir un document existant")
         action_ouvrir.triggered.connect(self.action_ouvrir)
-        toolbar.addAction(action_ouvrir)
+        self.toolbar.addAction(action_ouvrir)
 
-        toolbar.addSeparator()
+        self.toolbar.addSeparator()
 
         self.action_sauvegarder_toolbar = QAction("&Sauvegarder", self)
         self.action_sauvegarder_toolbar.setIcon(QIcon("icons/save.png"))
         self.action_sauvegarder_toolbar.setStatusTip("Sauvegarder le document actuel")
         self.action_sauvegarder_toolbar.triggered.connect(self.action_sauvegarder)
-        toolbar.addAction(self.action_sauvegarder_toolbar)
+        self.toolbar.addAction(self.action_sauvegarder_toolbar)
 
     def setup_status_bar(self) -> None:
         if (status_bar := self.statusBar()) is None:
@@ -145,46 +146,51 @@ class MainWindow(QMainWindow):
 
     def show_context_menu(self, position: QPoint) -> None:
         """Affiche le menu contextuel"""
+        widget_clicked = self.childAt(position)
         context_menu = QMenu(self)
 
-        # Actions du menu contextuel
-        if (copy_action := context_menu.addAction("Copier")) is None:
-            return
+        if widget_clicked == self.toolbar:
+            context_menu.addAction("Personnaliser la barre d'outils")
+            context_menu.addAction("Masquer la barre d'outils")
+            context_menu.addAction("Réinitialiser la barre d'outils")
+        else:
+            if (copy_action := context_menu.addAction("Copier")) is None:
+                return
 
-        copy_action.triggered.connect(self.copy_content)
+            copy_action.triggered.connect(self.copy_content)
 
-        if (paste_action := context_menu.addAction("Coller")) is None:
-            return
+            if (paste_action := context_menu.addAction("Coller")) is None:
+                return
 
-        paste_action.triggered.connect(self.paste_content)
-        paste_action.setEnabled(self.has_clipboard_content())
+            paste_action.triggered.connect(self.paste_content)
+            paste_action.setEnabled(self.has_clipboard_content())
 
-        context_menu.addSeparator()
+            context_menu.addSeparator()
 
-        if (properties_action := context_menu.addAction("Couper")) is None:
-            return
+            if (properties_action := context_menu.addAction("Couper")) is None:
+                return
 
-        properties_action.triggered.connect(self.cut_content)
+            properties_action.triggered.connect(self.cut_content)
 
-        # Sous-menu Format avec actions checkable
-        if (format_menu := context_menu.addMenu("Format")) is None:
-            return
+            # Sous-menu Format avec actions checkable
+            if (format_menu := context_menu.addMenu("Format")) is None:
+                return
 
-        # Action Gras - checkable
-        action_gras = QAction("Gras", self)
-        action_gras.setCheckable(True)
-        action_gras.setChecked(self.is_bold)
-        action_gras.triggered.connect(self.toggle_bold)
-        format_menu.addAction(action_gras)
+            # Action Gras - checkable
+            action_gras = QAction("Gras", self)
+            action_gras.setCheckable(True)
+            action_gras.setChecked(self.is_bold)
+            action_gras.triggered.connect(self.toggle_bold)
+            format_menu.addAction(action_gras)
 
-        # Action Italique - checkable
-        action_italique = QAction("Italique", self)
-        action_italique.setCheckable(True)
-        action_italique.setChecked(self.is_italic)
-        action_italique.triggered.connect(self.toggle_italic)
-        format_menu.addAction(action_italique)
+            # Action Italique - checkable
+            action_italique = QAction("Italique", self)
+            action_italique.setCheckable(True)
+            action_italique.setChecked(self.is_italic)
+            action_italique.triggered.connect(self.toggle_italic)
+            format_menu.addAction(action_italique)
 
-        format_menu.addAction("Couleur du texte")
+            format_menu.addAction("Couleur du texte")
 
         # Afficher le menu à la position du clic
         context_menu.exec(self.mapToGlobal(position))
