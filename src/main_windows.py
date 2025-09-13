@@ -150,29 +150,35 @@ class MainWindow(QMainWindow):
         context_menu = QMenu(self)
 
         if widget_clicked == self.toolbar:
-            context_menu.addAction("Personnaliser la barre d'outils")
+            # === AFFICHAGE === (actions les plus courantes)
             context_menu.addAction("Masquer la barre d'outils")
+
+            context_menu.addSeparator()
+
+            # === PERSONNALISATION ===
+            context_menu.addAction("Personnaliser la barre d'outils")
             context_menu.addAction("Réinitialiser la barre d'outils")
         else:
+            # === ÉDITION === (actions les plus courantes)
             if (copy_action := context_menu.addAction("Copier")) is None:
                 return
-
             copy_action.triggered.connect(self.copy_content)
 
+            if (cut_action := context_menu.addAction("Couper")) is None:
+                return
+            cut_action.triggered.connect(self.cut_content)
+
+            context_menu.addSeparator()
+
+            # === COLLAGE ===
             if (paste_action := context_menu.addAction("Coller")) is None:
                 return
-
             paste_action.triggered.connect(self.paste_content)
             paste_action.setEnabled(self.has_clipboard_content())
 
             context_menu.addSeparator()
 
-            if (properties_action := context_menu.addAction("Couper")) is None:
-                return
-
-            properties_action.triggered.connect(self.cut_content)
-
-            # Sous-menu Format avec actions checkable
+            # === FORMAT ===
             if (format_menu := context_menu.addMenu("Format")) is None:
                 return
 
