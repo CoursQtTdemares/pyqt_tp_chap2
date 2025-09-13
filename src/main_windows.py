@@ -153,10 +153,10 @@ class MainWindow(QMainWindow):
 
         context_menu.addSeparator()
 
-        if (properties_action := context_menu.addAction("Propriétés...")) is None:
+        if (properties_action := context_menu.addAction("Couper")) is None:
             return
 
-        properties_action.triggered.connect(self.show_properties)
+        properties_action.triggered.connect(self.cut_content)
 
         # Afficher le menu à la position du clic
         context_menu.exec(self.mapToGlobal(position))
@@ -171,7 +171,7 @@ class MainWindow(QMainWindow):
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Contenu collé", 2000)
 
-    def show_properties(self) -> None:
+    def cut_content(self) -> None:
         """Affiche les propriétés"""
         if (status_bar := self.statusBar()) is not None:
-            status_bar.showMessage("Affichage des propriétés...", 2000)
+            status_bar.showMessage("Contenu coupé", 2000)
