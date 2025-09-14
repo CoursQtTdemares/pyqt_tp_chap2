@@ -25,6 +25,7 @@ class MainWindow(QMainWindow):
         self.setup_menu_bar()
         self.setup_toolbar()
         self.setup_status_bar()
+        self.sync_view_actions_state()
         self.save_action.setEnabled(False)
         self.content_to_copy = False
         self.content_to_cut = False
@@ -81,6 +82,19 @@ class MainWindow(QMainWindow):
         self.paste_action.setStatusTip("Coller le contenu du presse-papier")
         self.paste_action.triggered.connect(self.paste_content)
 
+        # Actions d'affichage
+        self.toolbar_view_action = QAction("&Barre d'outils", self)
+        self.toolbar_view_action.setCheckable(True)
+        self.toolbar_view_action.setChecked(True)  # Visible par défaut
+        self.toolbar_view_action.setStatusTip("Afficher/Masquer la barre d'outils")
+        self.toolbar_view_action.triggered.connect(self.toggle_toolbar_visibility)
+
+        self.statusbar_view_action = QAction("Barre de &statut", self)
+        self.statusbar_view_action.setCheckable(True)
+        self.statusbar_view_action.setChecked(True)  # Visible par défaut
+        self.statusbar_view_action.setStatusTip("Afficher/Masquer la barre de statut")
+        self.statusbar_view_action.triggered.connect(self.toggle_statusbar_visibility)
+
     def setup_theme(self) -> None:
         self.apply_light_theme()  # default theme
 
@@ -98,6 +112,30 @@ class MainWindow(QMainWindow):
 
     def apply_dark_theme(self) -> None:
         self.setStyleSheet(load_css(CSS_DARK_FILE_PATH))
+
+    def toggle_toolbar_visibility(self) -> None:
+        """Bascule la visibilité de la barre d'outils"""
+        if hasattr(self, "toolbar") and self.toolbar is not None:
+            is_visible = not self.toolbar.isVisible()
+            self.toolbar.setVisible(is_visible)
+            # Synchroniser l'état de l'action avec la visibilité réelle
+            self.toolbar_view_action.setChecked(is_visible)
+
+            if (status_bar := self.statusBar()) is not None:
+                message = "Barre d'outils affichée" if is_visible else "Barre d'outils masquée"
+                status_bar.showMessage(message, 2000)
+
+    def toggle_statusbar_visibility(self) -> None:
+        """Bascule la visibilité de la barre de statut"""
+        if (status_bar := self.statusBar()) is not None:
+            is_visible = not status_bar.isVisible()
+            status_bar.setVisible(is_visible)
+            # Synchroniser l'état de l'action avec la visibilité réelle
+            self.statusbar_view_action.setChecked(is_visible)
+
+            # Si la barre est visible, afficher un message
+            if is_visible:
+                status_bar.showMessage("Barre de statut affichée", 2000)
 
     def setup_menu_bar(self) -> None:
         if (menu_bar := self.menuBar()) is None:
@@ -119,6 +157,17 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.copy_action)
         edit_menu.addAction(self.cut_action)
         edit_menu.addAction(self.paste_action)
+
+        # Menu Affichage
+        if (view_menu := menu_bar.addMenu("&Affichage")) is None:
+            return
+        view_menu.addAction(self.toolbar_view_action)
+        view_menu.addAction(self.statusbar_view_action)
+
+        # Menu Quitter
+        if (quit_menu := menu_bar.addMenu("&Quitter")) is None:
+            return
+        quit_menu.addAction(self.quit_action)
 
     def action_nouveau(self) -> None:
         if (status_bar := self.statusBar()) is not None:
@@ -150,6 +199,8 @@ class MainWindow(QMainWindow):
         self.toolbar.addAction(self.open_action)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.save_action)
+        self.toolbar.addSeparator()
+        self.toolbar.addAction(self.quit_action)
 
     def setup_status_bar(self) -> None:
         if (status_bar := self.statusBar()) is None:
@@ -159,6 +210,16 @@ class MainWindow(QMainWindow):
 
         self.status_label_permanent = QLabel("État: Prêt")
         status_bar.addPermanentWidget(self.status_label_permanent)
+
+    def sync_view_actions_state(self) -> None:
+        """Synchronise l'état des actions d'affichage avec la visibilité réelle des barres"""
+        # Synchroniser l'action toolbar avec la visibilité de la barre d'outils
+        if hasattr(self, "toolbar") and self.toolbar is not None:
+            self.toolbar_view_action.setChecked(self.toolbar.isVisible())
+
+        # Synchroniser l'action statusbar avec la visibilité de la barre de statut
+        if (status_bar := self.statusBar()) is not None:
+            self.statusbar_view_action.setChecked(status_bar.isVisible())
 
     def setup_context_menu(self) -> None:
         """Configure les menus contextuels"""
