@@ -1,4 +1,6 @@
-from PyQt6.QtCore import QPoint, Qt
+from typing import Literal
+
+from PyQt6.QtCore import QPoint, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QLabel, QMainWindow, QMenu, QPushButton
 
@@ -7,6 +9,9 @@ from src.utils import load_css
 
 
 class MainWindow(QMainWindow):
+    # Signal pour le système de notifications
+    show_notification = pyqtSignal(str, str)  # (message, type)
+
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("TP21 : tp_interface_complete")
@@ -22,8 +27,15 @@ class MainWindow(QMainWindow):
         # Initialiser le compteur d'actions
         self.action_counter = 0
 
+        # Initialiser le système de notifications
+        self.notification_widgets: list[QLabel] = []  # Liste des widgets de notification actifs
+        self.notification_timers: list[QTimer] = []  # Liste des timers associés
+
         # Créer les actions partagées
         self.create_actions()
+
+        # Connecter le signal de notification
+        self.show_notification.connect(self.display_notification)
 
         self.setup_menu_bar()
         self.setup_toolbar()
@@ -112,10 +124,12 @@ class MainWindow(QMainWindow):
 
     def apply_light_theme(self) -> None:
         self.increment_action_counter("Thème clair")
+        self.show_notification.emit("Thème clair appliqué", "info")
         self.setStyleSheet(load_css(CSS_LIGHT_FILE_PATH))
 
     def apply_dark_theme(self) -> None:
         self.increment_action_counter("Thème sombre")
+        self.show_notification.emit("Thème sombre appliqué", "info")
         self.setStyleSheet(load_css(CSS_DARK_FILE_PATH))
 
     def toggle_toolbar_visibility(self) -> None:
@@ -131,8 +145,11 @@ class MainWindow(QMainWindow):
         action_name = "Afficher barre d'outils" if is_visible else "Masquer barre d'outils"
         self.increment_action_counter(action_name)
 
+        # Notification d'information
+        message = "Barre d'outils affichée" if is_visible else "Barre d'outils masquée"
+        self.show_notification.emit(message, "info")
+
         if (status_bar := self.statusBar()) is not None:
-            message = "Barre d'outils affichée" if is_visible else "Barre d'outils masquée"
             status_bar.showMessage(message, 2000)
 
     def toggle_statusbar_visibility(self) -> None:
@@ -141,16 +158,23 @@ class MainWindow(QMainWindow):
             return
 
         is_visible = not status_bar.isVisible()
+        action_name = "Afficher barre de statut" if is_visible else "Masquer barre de statut"
+        self.increment_action_counter(action_name)
+
+        # Notification d'information (avant de masquer la barre de statut)
+        message = "Barre de statut affichée" if is_visible else "Barre de statut masquée"
+        if not is_visible:
+            # Si on va masquer la barre, montrer la notification avant
+            self.show_notification.emit(message, "warning")
+
         status_bar.setVisible(is_visible)
         # Synchroniser l'état de l'action avec la visibilité réelle
         self.statusbar_view_action.setChecked(is_visible)
 
-        action_name = "Afficher barre de statut" if is_visible else "Masquer barre de statut"
-        self.increment_action_counter(action_name)
-
-        # Si la barre est visible, afficher un message
+        # Si la barre est visible, afficher un message et notification
         if is_visible:
             status_bar.showMessage("Barre de statut affichée", 2000)
+            self.show_notification.emit(message, "info")
 
     def setup_menu_bar(self) -> None:
         if (menu_bar := self.menuBar()) is None:
@@ -186,18 +210,21 @@ class MainWindow(QMainWindow):
 
     def action_nouveau(self) -> None:
         self.increment_action_counter("Nouveau document")
+        self.show_notification.emit("Nouveau document créé avec succès", "success")
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Nouvelle fenêtre ouverte", 1000)
         self.save_action.setEnabled(True)
 
     def action_ouvrir(self) -> None:
         self.increment_action_counter("Ouvrir document")
+        self.show_notification.emit("Document ouvert avec succès", "success")
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Fenêtre ouverte", 1000)
         self.save_action.setEnabled(True)
 
     def action_sauvegarder(self) -> None:
         self.increment_action_counter("Sauvegarder document")
+        self.show_notification.emit("Document sauvegardé avec succès", "success")
         # Barre de statut
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Fenêtre sauvegardée", 1000)
@@ -267,6 +294,9 @@ class MainWindow(QMainWindow):
         self.action_counter = 0
         self.action_counter_label.setText(f"Actions: {self.action_counter}")
 
+        # Notification importante pour la remise à zéro
+        self.show_notification.emit(f"Compteur remis à zéro ({previous_count} actions effacées)", "warning")
+
         # Feedback dans la barre de statut
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage(f"Compteur remis à zéro (était: {previous_count})", 2000)
@@ -278,6 +308,136 @@ class MainWindow(QMainWindow):
 
         # Mettre à jour l'état permanent
         self.status_label_permanent.setText("État: Compteur remis à zéro")
+
+    def display_notification(
+        self,
+        message: str,
+        notification_type: Literal["info", "success", "warning", "error"],
+    ) -> None:
+        """Affiche une notification colorée dans la barre de statut"""
+        if (status_bar := self.statusBar()) is None:
+            return
+
+        # Définir les styles pour chaque type de notification avec !important pour écraser le CSS global
+        styles: dict[Literal["info", "success", "warning", "error"], str] = {
+            "info": """
+                QLabel {
+                    background-color: #e3f2fd !important;
+                    color: #1565c0 !important;
+                    border: 2px solid #90caf9 !important;
+                    padding: 8px 12px !important;
+                    border-radius: 4px !important;
+                    font-weight: bold !important;
+                    margin: 2px !important;
+                }
+            """,
+            "success": """
+                QLabel {
+                    background-color: #e8f5e8 !important;
+                    color: #2e7d32 !important;
+                    border: 2px solid #81c784 !important;
+                    padding: 8px 12px !important;
+                    border-radius: 4px !important;
+                    font-weight: bold !important;
+                    margin: 2px !important;
+                }
+            """,
+            "warning": """
+                QLabel {
+                    background-color: #fff8e1 !important;
+                    color: #f57c00 !important;
+                    border: 2px solid #ffb74d !important;
+                    padding: 8px 12px !important;
+                    border-radius: 4px !important;
+                    font-weight: bold !important;
+                    margin: 2px !important;
+                }
+            """,
+            "error": """
+                QLabel {
+                    background-color: #ffebee !important;
+                    color: #c62828 !important;
+                    border: 2px solid #e57373 !important;
+                    padding: 8px 12px !important;
+                    border-radius: 4px !important;
+                    font-weight: bold !important;
+                    margin: 2px !important;
+                }
+            """,
+        }
+
+        # Créer le widget de notification
+        notification_label = QLabel(message)
+        notification_label.setStyleSheet(styles[notification_type])
+        notification_label.setMaximumWidth(250)
+        notification_label.setMinimumWidth(150)
+        notification_label.setWordWrap(True)
+
+        # Propriétés pour forcer la visibilité
+        notification_label.setVisible(True)
+        notification_label.setAttribute(Qt.WidgetAttribute.WA_ForceUpdatesDisabled, False)
+        notification_label.setEnabled(True)
+
+        # Insérer au début de la barre de statut (index 0) pour être sûr qu'elle soit visible
+        status_bar.insertWidget(0, notification_label)
+
+        # Forcer l'affichage
+        notification_label.show()
+        notification_label.repaint()
+        status_bar.repaint()
+
+        # Ajouter à la liste des widgets actifs
+        self.notification_widgets.append(notification_label)
+
+        # Créer un timer pour l'auto-suppression
+        timer = QTimer()
+        timer.setSingleShot(True)
+        timer.timeout.connect(lambda: self.remove_notification(notification_label, timer))
+
+        # Durée basée sur le type de notification
+        durations: dict[Literal["info", "success", "warning", "error"], int] = {
+            "info": 3000,  # 3 secondes
+            "success": 2500,  # 2.5 secondes
+            "warning": 4000,  # 4 secondes
+            "error": 5000,  # 5 secondes
+        }
+
+        timer.start(durations[notification_type])
+        self.notification_timers.append(timer)
+
+    def remove_notification(self, notification_widget: QLabel, timer: QTimer | None) -> None:
+        """Supprime une notification de la barre de statut"""
+        try:
+            # Cacher d'abord le widget
+            notification_widget.hide()
+
+            # Supprimer de la barre de statut
+            if (status_bar := self.statusBar()) is not None:
+                status_bar.removeWidget(notification_widget)
+                status_bar.repaint()
+
+            # Supprimer le widget
+            notification_widget.deleteLater()
+
+            # Nettoyer les listes
+            if notification_widget in self.notification_widgets:
+                self.notification_widgets.remove(notification_widget)
+            if timer is not None and timer in self.notification_timers:
+                self.notification_timers.remove(timer)
+
+        except Exception as e:
+            # Gestion d'erreur silencieuse pour éviter les crashes
+            print(f"Erreur lors de la suppression de la notification: {e}")
+
+    def clear_all_notifications(self) -> None:
+        """Supprime toutes les notifications actives"""
+        # Arrêter tous les timers
+        for timer in self.notification_timers.copy():
+            timer.stop()
+
+        # Supprimer tous les widgets
+        for widget in self.notification_widgets.copy():
+            self.remove_notification(widget, None)
 
     def setup_context_menu(self) -> None:
         """Configure les menus contextuels"""
@@ -351,6 +511,7 @@ class MainWindow(QMainWindow):
         """Gestionnaire copier"""
         self.increment_action_counter("Copier")
         self.content_to_copy = True
+        self.show_notification.emit("Contenu copié dans le presse-papier", "success")
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Contenu copié", 2000)
 
@@ -360,7 +521,12 @@ class MainWindow(QMainWindow):
         if self.content_to_cut is True:
             self.content_to_cut = False
 
-        message = "Aucun contenu à coller" if self.has_clipboard_content() is False else "Contenu collé"
+        if self.has_clipboard_content():
+            message = "Contenu collé avec succès"
+            self.show_notification.emit(message, "success")
+        else:
+            message = "Aucun contenu à coller"
+            self.show_notification.emit(message, "warning")
 
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage(message, 2000)
@@ -370,6 +536,7 @@ class MainWindow(QMainWindow):
         self.increment_action_counter("Couper")
         self.content_to_cut = True
         self.content_to_copy = False
+        self.show_notification.emit("Contenu coupé et placé dans le presse-papier", "success")
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Contenu coupé", 2000)
 
@@ -388,11 +555,12 @@ class MainWindow(QMainWindow):
         action_name = "Activer gras" if self.is_bold else "Désactiver gras"
         self.increment_action_counter(action_name)
 
+        # Notification de formatage
+        message = "Formatage gras activé" if self.is_bold else "Formatage gras désactivé"
+        self.show_notification.emit(message, "info")
+
         if (status_bar := self.statusBar()) is not None:
-            if self.is_bold:
-                status_bar.showMessage("Formatage gras activé", 2000)
-            else:
-                status_bar.showMessage("Formatage gras désactivé", 2000)
+            status_bar.showMessage(message, 2000)
 
     def toggle_italic(self) -> None:
         """Bascule l'état italique du texte"""
@@ -401,8 +569,9 @@ class MainWindow(QMainWindow):
         action_name = "Activer italique" if self.is_italic else "Désactiver italique"
         self.increment_action_counter(action_name)
 
+        # Notification de formatage
+        message = "Formatage italique activé" if self.is_italic else "Formatage italique désactivé"
+        self.show_notification.emit(message, "info")
+
         if (status_bar := self.statusBar()) is not None:
-            if self.is_italic:
-                status_bar.showMessage("Formatage italique activé", 2000)
-            else:
-                status_bar.showMessage("Formatage italique désactivé", 2000)
+            status_bar.showMessage(message, 2000)
