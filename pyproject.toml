@@ -1,7 +1,7 @@
 [project]
-name = "pyqt_tp_21"
+name = "pyqt_tp_chap2"
 version = "0.1.0"
-description = "pyqt_tp_21 description."
+description = "pyqt_tp_chap2 description."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = ["pyqt6>=6.9.1"]

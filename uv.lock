@@ -162,7 +162,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pyqt-tp-21"
+name = "pyqt-tp-chap2"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

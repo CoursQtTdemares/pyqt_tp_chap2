@@ -1,4 +1,4 @@
-name: "ci-cd-pyqt_tp_21"
+name: "ci-cd-pyqt_tp_chap2"
 on:
   push:
     branches:

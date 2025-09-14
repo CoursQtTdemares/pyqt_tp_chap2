@@ -4,7 +4,7 @@ from src.main_windows import MainWindow
 
 
 def main() -> None:
-    """Entry point for pyqt_tp_21."""
+    """Entry point for pyqt_tp_chap2."""
 
     app = QApplication([])
     window = MainWindow()

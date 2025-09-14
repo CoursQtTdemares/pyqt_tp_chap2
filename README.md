@@ -1,4 +1,4 @@
-# pyqt_tp_21
+# pyqt_tp_chap2
 
 ## Description
 
