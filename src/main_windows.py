@@ -1,6 +1,6 @@
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QAction, QIcon
-from PyQt6.QtWidgets import QLabel, QMainWindow, QMenu
+from PyQt6.QtWidgets import QLabel, QMainWindow, QMenu, QPushButton
 
 from src.domain.constants import CSS_DARK_FILE_PATH, CSS_LIGHT_FILE_PATH
 from src.utils import load_css
@@ -18,6 +18,9 @@ class MainWindow(QMainWindow):
         # Initialiser les états de formatage
         self.is_bold = False
         self.is_italic = False
+
+        # Initialiser le compteur d'actions
+        self.action_counter = 0
 
         # Créer les actions partagées
         self.create_actions()
@@ -108,34 +111,46 @@ class MainWindow(QMainWindow):
         theme_menu.addAction(self.dark_theme_action)
 
     def apply_light_theme(self) -> None:
+        self.increment_action_counter("Thème clair")
         self.setStyleSheet(load_css(CSS_LIGHT_FILE_PATH))
 
     def apply_dark_theme(self) -> None:
+        self.increment_action_counter("Thème sombre")
         self.setStyleSheet(load_css(CSS_DARK_FILE_PATH))
 
     def toggle_toolbar_visibility(self) -> None:
         """Bascule la visibilité de la barre d'outils"""
-        if hasattr(self, "toolbar") and self.toolbar is not None:
-            is_visible = not self.toolbar.isVisible()
-            self.toolbar.setVisible(is_visible)
-            # Synchroniser l'état de l'action avec la visibilité réelle
-            self.toolbar_view_action.setChecked(is_visible)
+        if self.toolbar is None:
+            return
 
-            if (status_bar := self.statusBar()) is not None:
-                message = "Barre d'outils affichée" if is_visible else "Barre d'outils masquée"
-                status_bar.showMessage(message, 2000)
+        is_visible = not self.toolbar.isVisible()
+        self.toolbar.setVisible(is_visible)
+        # Synchroniser l'état de l'action avec la visibilité réelle
+        self.toolbar_view_action.setChecked(is_visible)
+
+        action_name = "Afficher barre d'outils" if is_visible else "Masquer barre d'outils"
+        self.increment_action_counter(action_name)
+
+        if (status_bar := self.statusBar()) is not None:
+            message = "Barre d'outils affichée" if is_visible else "Barre d'outils masquée"
+            status_bar.showMessage(message, 2000)
 
     def toggle_statusbar_visibility(self) -> None:
         """Bascule la visibilité de la barre de statut"""
-        if (status_bar := self.statusBar()) is not None:
-            is_visible = not status_bar.isVisible()
-            status_bar.setVisible(is_visible)
-            # Synchroniser l'état de l'action avec la visibilité réelle
-            self.statusbar_view_action.setChecked(is_visible)
+        if (status_bar := self.statusBar()) is None:
+            return
 
-            # Si la barre est visible, afficher un message
-            if is_visible:
-                status_bar.showMessage("Barre de statut affichée", 2000)
+        is_visible = not status_bar.isVisible()
+        status_bar.setVisible(is_visible)
+        # Synchroniser l'état de l'action avec la visibilité réelle
+        self.statusbar_view_action.setChecked(is_visible)
+
+        action_name = "Afficher barre de statut" if is_visible else "Masquer barre de statut"
+        self.increment_action_counter(action_name)
+
+        # Si la barre est visible, afficher un message
+        if is_visible:
+            status_bar.showMessage("Barre de statut affichée", 2000)
 
     def setup_menu_bar(self) -> None:
         if (menu_bar := self.menuBar()) is None:
@@ -170,16 +185,19 @@ class MainWindow(QMainWindow):
         quit_menu.addAction(self.quit_action)
 
     def action_nouveau(self) -> None:
+        self.increment_action_counter("Nouveau document")
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Nouvelle fenêtre ouverte", 1000)
         self.save_action.setEnabled(True)
 
     def action_ouvrir(self) -> None:
+        self.increment_action_counter("Ouvrir document")
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Fenêtre ouverte", 1000)
         self.save_action.setEnabled(True)
 
     def action_sauvegarder(self) -> None:
+        self.increment_action_counter("Sauvegarder document")
         # Barre de statut
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Fenêtre sauvegardée", 1000)
@@ -208,8 +226,21 @@ class MainWindow(QMainWindow):
 
         status_bar.showMessage("Application prête", 2000)
 
+        # Widget d'état permanent (gauche)
         self.status_label_permanent = QLabel("État: Prêt")
         status_bar.addPermanentWidget(self.status_label_permanent)
+
+        # Compteur d'actions (centre-droite)
+        self.action_counter_label = QLabel(f"Actions: {self.action_counter}")
+        self.action_counter_label.setStyleSheet("QLabel { margin: 0 10px; font-weight: bold; }")
+        status_bar.addPermanentWidget(self.action_counter_label)
+
+        # Bouton de remise à zéro (droite)
+        self.reset_counter_button = QPushButton("RAZ")
+        self.reset_counter_button.setMaximumWidth(50)
+        self.reset_counter_button.setToolTip("Remettre le compteur d'actions à zéro")
+        self.reset_counter_button.clicked.connect(self.reset_action_counter)
+        status_bar.addPermanentWidget(self.reset_counter_button)
 
     def sync_view_actions_state(self) -> None:
         """Synchronise l'état des actions d'affichage avec la visibilité réelle des barres"""
@@ -220,6 +251,33 @@ class MainWindow(QMainWindow):
         # Synchroniser l'action statusbar avec la visibilité de la barre de statut
         if (status_bar := self.statusBar()) is not None:
             self.statusbar_view_action.setChecked(status_bar.isVisible())
+
+    def increment_action_counter(self, action_name: str = "Action") -> None:
+        """Incrémente le compteur d'actions et met à jour l'affichage"""
+        self.action_counter += 1
+        self.action_counter_label.setText(f"Actions: {self.action_counter}")
+
+        # Feedback optionnel dans la barre de statut
+        if (status_bar := self.statusBar()) is not None:
+            status_bar.showMessage(f"{action_name} effectuée (Total: {self.action_counter})", 1500)
+
+    def reset_action_counter(self) -> None:
+        """Remet à zéro le compteur d'actions - Communication bidirectionnelle"""
+        previous_count = self.action_counter
+        self.action_counter = 0
+        self.action_counter_label.setText(f"Actions: {self.action_counter}")
+
+        # Feedback dans la barre de statut
+        if (status_bar := self.statusBar()) is not None:
+            status_bar.showMessage(f"Compteur remis à zéro (était: {previous_count})", 2000)
+
+        # Communication bidirectionnelle : affecter le comportement de l'application
+        # Par exemple, remettre à zéro certains états
+        self.content_to_copy = False
+        self.content_to_cut = False
+
+        # Mettre à jour l'état permanent
+        self.status_label_permanent.setText("État: Compteur remis à zéro")
 
     def setup_context_menu(self) -> None:
         """Configure les menus contextuels"""
@@ -291,12 +349,14 @@ class MainWindow(QMainWindow):
 
     def copy_content(self) -> None:
         """Gestionnaire copier"""
+        self.increment_action_counter("Copier")
         self.content_to_copy = True
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Contenu copié", 2000)
 
     def paste_content(self) -> None:
         """Gestionnaire coller"""
+        self.increment_action_counter("Coller")
         if self.content_to_cut is True:
             self.content_to_cut = False
 
@@ -306,7 +366,8 @@ class MainWindow(QMainWindow):
             status_bar.showMessage(message, 2000)
 
     def cut_content(self) -> None:
-        """Affiche les propriétés"""
+        """Gestionnaire couper"""
+        self.increment_action_counter("Couper")
         self.content_to_cut = True
         self.content_to_copy = False
         if (status_bar := self.statusBar()) is not None:
@@ -324,6 +385,9 @@ class MainWindow(QMainWindow):
         """Bascule l'état gras du texte"""
         self.is_bold = not self.is_bold
 
+        action_name = "Activer gras" if self.is_bold else "Désactiver gras"
+        self.increment_action_counter(action_name)
+
         if (status_bar := self.statusBar()) is not None:
             if self.is_bold:
                 status_bar.showMessage("Formatage gras activé", 2000)
@@ -333,6 +397,9 @@ class MainWindow(QMainWindow):
     def toggle_italic(self) -> None:
         """Bascule l'état italique du texte"""
         self.is_italic = not self.is_italic
+
+        action_name = "Activer italique" if self.is_italic else "Désactiver italique"
+        self.increment_action_counter(action_name)
 
         if (status_bar := self.statusBar()) is not None:
             if self.is_italic:
