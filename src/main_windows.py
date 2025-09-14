@@ -19,16 +19,67 @@ class MainWindow(QMainWindow):
         self.is_bold = False
         self.is_italic = False
 
+        # Créer les actions partagées
+        self.create_actions()
+
         self.setup_menu_bar()
         self.setup_toolbar()
         self.setup_status_bar()
-        self.action_sauvegarder_menu.setEnabled(False)
-        self.action_sauvegarder_toolbar.setEnabled(False)
+        self.save_action.setEnabled(False)
         self.content_to_copy = False
         self.content_to_cut = False
         self.setup_theme()
         self.setup_context_menu()
         self.setup_shortcuts()
+
+    def create_actions(self) -> None:
+        """Crée toutes les actions partagées entre menus et barres d'outils"""
+        # Actions principales
+        self.new_action = QAction("&Nouveau", self)
+        self.new_action.setShortcut("Ctrl+N")
+        self.new_action.setIcon(QIcon("icons/new.png"))
+        self.new_action.setStatusTip("Créer un nouveau document")
+        self.new_action.triggered.connect(self.action_nouveau)
+
+        self.open_action = QAction("&Ouvrir", self)
+        self.open_action.setShortcut("Ctrl+O")
+        self.open_action.setIcon(QIcon("icons/open.png"))
+        self.open_action.setStatusTip("Ouvrir un document existant")
+        self.open_action.triggered.connect(self.action_ouvrir)
+
+        self.save_action = QAction("&Sauvegarder", self)
+        self.save_action.setShortcut("Ctrl+S")
+        self.save_action.setIcon(QIcon("icons/save.png"))
+        self.save_action.setStatusTip("Sauvegarder le document actuel")
+        self.save_action.triggered.connect(self.action_sauvegarder)
+
+        self.quit_action = QAction("&Quitter", self)
+        self.quit_action.setShortcut("Ctrl+Q")
+        self.quit_action.setStatusTip("Fermer l'application")
+        self.quit_action.triggered.connect(self.close)
+
+        # Actions de thème
+        self.light_theme_action = QAction("&Thème clair", self)
+        self.light_theme_action.triggered.connect(self.apply_light_theme)
+
+        self.dark_theme_action = QAction("&Thème sombre", self)
+        self.dark_theme_action.triggered.connect(self.apply_dark_theme)
+
+        # Actions d'édition
+        self.copy_action = QAction("&Copier", self)
+        self.copy_action.setShortcut("Ctrl+C")
+        self.copy_action.setStatusTip("Copier le contenu sélectionné")
+        self.copy_action.triggered.connect(self.copy_content)
+
+        self.cut_action = QAction("Co&uper", self)
+        self.cut_action.setShortcut("Ctrl+X")
+        self.cut_action.setStatusTip("Couper le contenu sélectionné")
+        self.cut_action.triggered.connect(self.cut_content)
+
+        self.paste_action = QAction("C&oller", self)
+        self.paste_action.setShortcut("Ctrl+V")
+        self.paste_action.setStatusTip("Coller le contenu du presse-papier")
+        self.paste_action.triggered.connect(self.paste_content)
 
     def setup_theme(self) -> None:
         self.apply_light_theme()  # default theme
@@ -39,13 +90,8 @@ class MainWindow(QMainWindow):
         if (theme_menu := menu.addMenu("&Thème")) is None:
             return
 
-        light_theme = QAction("&Thème clair", self)
-        light_theme.triggered.connect(self.apply_light_theme)
-        theme_menu.addAction(light_theme)
-
-        dark_theme = QAction("&Thème sombre", self)
-        dark_theme.triggered.connect(self.apply_dark_theme)
-        theme_menu.addAction(dark_theme)
+        theme_menu.addAction(self.light_theme_action)
+        theme_menu.addAction(self.dark_theme_action)
 
     def apply_light_theme(self) -> None:
         self.setStyleSheet(load_css(CSS_LIGHT_FILE_PATH))
@@ -57,49 +103,39 @@ class MainWindow(QMainWindow):
         if (menu_bar := self.menuBar()) is None:
             return
 
-        action_nouveau = QAction("&Nouveau", self)
-        action_nouveau.setShortcut("Ctrl+N")
-        action_nouveau.setStatusTip("Créer un nouveau document")
-        action_nouveau.triggered.connect(self.action_nouveau)
-        menu_bar.addAction(action_nouveau)
+        # Menu Fichier
+        if (file_menu := menu_bar.addMenu("&Fichier")) is None:
+            return
+        file_menu.addAction(self.new_action)
+        file_menu.addAction(self.open_action)
+        file_menu.addSeparator()
+        file_menu.addAction(self.save_action)
+        file_menu.addSeparator()
+        file_menu.addAction(self.quit_action)
 
-        action_ouvrir = QAction("&Ouvrir", self)
-        action_ouvrir.setShortcut("Ctrl+O")
-        action_ouvrir.setStatusTip("Ouvrir un document existant")
-        action_ouvrir.triggered.connect(self.action_ouvrir)
-        menu_bar.addAction(action_ouvrir)
-
-        self.action_sauvegarder_menu = QAction("&Sauvegarder", self)
-        self.action_sauvegarder_menu.setShortcut("Ctrl+S")
-        self.action_sauvegarder_menu.setStatusTip("Sauvegarder le document actuel")
-        self.action_sauvegarder_menu.triggered.connect(self.action_sauvegarder)
-        menu_bar.addAction(self.action_sauvegarder_menu)
-
-        action_quitter = QAction("&Quitter", self)
-        action_quitter.setShortcut("Ctrl+Q")
-        action_quitter.setStatusTip("Fermer l'application")
-        action_quitter.triggered.connect(self.close)
-        menu_bar.addAction(action_quitter)
+        # Menu Édition
+        if (edit_menu := menu_bar.addMenu("&Édition")) is None:
+            return
+        edit_menu.addAction(self.copy_action)
+        edit_menu.addAction(self.cut_action)
+        edit_menu.addAction(self.paste_action)
 
     def action_nouveau(self) -> None:
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Nouvelle fenêtre ouverte", 1000)
-        self.action_sauvegarder_menu.setEnabled(True)
-        self.action_sauvegarder_toolbar.setEnabled(True)
+        self.save_action.setEnabled(True)
 
     def action_ouvrir(self) -> None:
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Fenêtre ouverte", 1000)
-        self.action_sauvegarder_menu.setEnabled(True)
-        self.action_sauvegarder_toolbar.setEnabled(True)
+        self.save_action.setEnabled(True)
 
     def action_sauvegarder(self) -> None:
         # Barre de statut
         if (status_bar := self.statusBar()) is not None:
             status_bar.showMessage("Fenêtre sauvegardée", 1000)
 
-        self.action_sauvegarder_menu.setEnabled(False)
-        self.action_sauvegarder_toolbar.setEnabled(False)
+        self.save_action.setEnabled(False)
 
     def setup_toolbar(self) -> None:
         self.toolbar = self.addToolBar("Principal")
@@ -108,27 +144,12 @@ class MainWindow(QMainWindow):
 
         self.toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
 
-        action_nouveau = QAction("&Nouveau", self)
-        action_nouveau.setIcon(QIcon("icons/new.png"))
-        action_nouveau.setStatusTip("Créer un nouveau document")
-        action_nouveau.triggered.connect(self.action_nouveau)
-        self.toolbar.addAction(action_nouveau)
-
+        # Utiliser les actions partagées
+        self.toolbar.addAction(self.new_action)
         self.toolbar.addSeparator()
-
-        action_ouvrir = QAction("&Ouvrir", self)
-        action_ouvrir.setIcon(QIcon("icons/open.png"))
-        action_ouvrir.setStatusTip("Ouvrir un document existant")
-        action_ouvrir.triggered.connect(self.action_ouvrir)
-        self.toolbar.addAction(action_ouvrir)
-
+        self.toolbar.addAction(self.open_action)
         self.toolbar.addSeparator()
-
-        self.action_sauvegarder_toolbar = QAction("&Sauvegarder", self)
-        self.action_sauvegarder_toolbar.setIcon(QIcon("icons/save.png"))
-        self.action_sauvegarder_toolbar.setStatusTip("Sauvegarder le document actuel")
-        self.action_sauvegarder_toolbar.triggered.connect(self.action_sauvegarder)
-        self.toolbar.addAction(self.action_sauvegarder_toolbar)
+        self.toolbar.addAction(self.save_action)
 
     def setup_status_bar(self) -> None:
         if (status_bar := self.statusBar()) is None:
@@ -147,23 +168,15 @@ class MainWindow(QMainWindow):
 
     def setup_shortcuts(self) -> None:
         """Configure les raccourcis clavier globaux"""
-        # Raccourci Copier (Ctrl+C)
-        shortcut_copy = QAction(self)
-        shortcut_copy.setShortcut("Ctrl+C")
-        shortcut_copy.triggered.connect(self.copy_content)
-        self.addAction(shortcut_copy)
-
-        # Raccourci Couper (Ctrl+X)
-        shortcut_cut = QAction(self)
-        shortcut_cut.setShortcut("Ctrl+X")
-        shortcut_cut.triggered.connect(self.cut_content)
-        self.addAction(shortcut_cut)
-
-        # Raccourci Coller (Ctrl+V)
-        shortcut_paste = QAction(self)
-        shortcut_paste.setShortcut("Ctrl+V")
-        shortcut_paste.triggered.connect(self.paste_content)
-        self.addAction(shortcut_paste)
+        # Les raccourcis sont déjà définis dans create_actions()
+        # On ajoute les actions à la fenêtre pour qu'elles soient globales
+        self.addAction(self.copy_action)
+        self.addAction(self.cut_action)
+        self.addAction(self.paste_action)
+        self.addAction(self.new_action)
+        self.addAction(self.open_action)
+        self.addAction(self.save_action)
+        self.addAction(self.quit_action)
 
     def show_context_menu(self, position: QPoint) -> None:
         """Affiche le menu contextuel"""
@@ -181,21 +194,14 @@ class MainWindow(QMainWindow):
             context_menu.addAction("Réinitialiser la barre d'outils")
         else:
             # === ÉDITION === (actions les plus courantes)
-            if (copy_action := context_menu.addAction("Copier")) is None:
-                return
-            copy_action.triggered.connect(self.copy_content)
-
-            if (cut_action := context_menu.addAction("Couper")) is None:
-                return
-            cut_action.triggered.connect(self.cut_content)
-
+            context_menu.addAction(self.copy_action)
+            context_menu.addAction(self.cut_action)
             context_menu.addSeparator()
 
             # === COLLAGE ===
-            if (paste_action := context_menu.addAction("Coller")) is None:
-                return
-            paste_action.triggered.connect(self.paste_content)
-            paste_action.setEnabled(self.has_clipboard_content())
+            # Mettre à jour l'état de paste_action avant de l'afficher
+            self.paste_action.setEnabled(self.has_clipboard_content())
+            context_menu.addAction(self.paste_action)
 
             context_menu.addSeparator()
 
